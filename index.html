@@ -952,28 +952,48 @@
         async function cargarProductos() {
             if (!supabaseClient) {
                 console.error('Supabase no inicializado');
+                document.getElementById('productsGrid').innerHTML = 
+                    '<div class="empty-cart"><p>Error: Supabase no esta inicializado. Recarga la pagina.</p></div>';
                 return;
             }
 
             document.getElementById('loadingProducts').style.display = 'block';
 
             try {
+                console.log('Intentando cargar productos...');
+                
                 const { data, error } = await supabaseClient
                     .from('productos')
                     .select('*')
                     .eq('activo', true)
                     .order('nombre');
 
-                if (error) throw error;
+                console.log('Respuesta de Supabase:', { data, error });
 
-                productos = data || [];
+                if (error) {
+                    console.error('Error de Supabase:', error);
+                    throw error;
+                }
+
+                if (!data || data.length === 0) {
+                    console.warn('No se encontraron productos activos');
+                    document.getElementById('productsGrid').innerHTML = 
+                        '<div class="empty-cart"><p>No hay productos disponibles. Ve al panel Admin para agregar productos.</p></div>';
+                    return;
+                }
+
+                productos = data;
+                console.log('Productos cargados:', productos.length);
                 renderizarCategorias();
                 renderizarProductos();
 
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error completo:', error);
                 document.getElementById('productsGrid').innerHTML = 
-                    '<div class="empty-cart"><p>Error al cargar productos. Verifica que las tablas esten creadas en Supabase.</p></div>';
+                    `<div class="empty-cart">
+                        <p>Error al cargar productos: ${error.message}</p>
+                        <p style="font-size: 0.9rem; color: #666;">Verifica la consola del navegador para mas detalles.</p>
+                    </div>`;
             } finally {
                 document.getElementById('loadingProducts').style.display = 'none';
             }
@@ -1009,7 +1029,7 @@
                 : productos.filter(p => p.categoria === categoriaActual);
             
             if (productosFiltrados.length === 0) {
-                grid.innerHTML = '<div class="empty-cart"><p>No hay productos disponibles. Ve al panel de Admin para agregar productos.</p></div>';
+                grid.innerHTML = '<div class="empty-cart"><p>No hay productos en esta categoria.</p></div>';
                 return;
             }
 
@@ -1183,6 +1203,8 @@
             };
             
             try {
+                console.log('Enviando pedido a n8n:', pedidoData);
+                
                 const response = await fetch(N8N_WEBHOOK_URL, {
                     method: 'POST',
                     headers: {
@@ -1190,6 +1212,8 @@
                     },
                     body: JSON.stringify(pedidoData)
                 });
+                
+                console.log('Respuesta de n8n:', response.status);
                 
                 if (!response.ok) {
                     throw new Error('Error al enviar el pedido');
@@ -1383,4 +1407,7 @@
         }
 
         inicializarSupabase();
-        cargarProductos()
+        cargarProductos();
+    </script>
+</body>
+</html>
