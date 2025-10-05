@@ -56,6 +56,7 @@
             display: flex;
             align-items: center;
             gap: 0.3rem;
+            cursor: pointer;
         }
         
         .logo-red {
@@ -570,6 +571,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
         
         .products-table {
@@ -629,6 +632,24 @@
             margin-bottom: 0.5rem;
         }
         
+        .login-section {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .auth-info {
+            background: #f0f9ff;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--secondary);
+        }
+        
         @media (max-width: 768px) {
             .hero h1 {
                 font-size: 2.5rem;
@@ -663,15 +684,14 @@
     <header class="header">
         <nav class="nav-container">
             <div>
-                <a href="#" class="logo" onclick="mostrarTienda()">
+                <div class="logo" onclick="mostrarTienda()">
                     <span class="logo-red">Red</span><span class="logo-number">51</span>
-                </a>
+                </div>
                 <span class="logo-subtitle">TECHNOLOGY</span>
             </div>
             <div class="nav-links">
                 <button class="nav-btn" onclick="mostrarTienda()" id="btnTienda">Tienda</button>
-                <button class="nav-btn" onclick="mostrarConfig()">Configurar</button>
-                <button class="nav-btn" onclick="mostrarAdmin()" id="btnAdmin" style="display:none;">Admin</button>
+                <button class="nav-btn" onclick="mostrarAdmin()" id="btnAdmin">Admin</button>
                 <button class="cart-btn" onclick="abrirCarrito()">
                     Carrito
                     <span class="cart-count" id="cartCount">0</span>
@@ -698,127 +718,65 @@
         </main>
     </div>
 
-    <div id="configView" style="display:none;">
-        <main class="container">
-            <div class="admin-section">
-                <h2 style="margin-bottom: 1rem; color: var(--primary);">Configuracion de Supabase</h2>
-                <p style="margin-bottom: 2rem; color: #666;">
-                    Para usar esta aplicacion, necesitas conectarla a tu proyecto de Supabase. 
-                    <a href="https://supabase.com" target="_blank" style="color: var(--secondary);">Crea una cuenta gratis aqui</a>.
-                </p>
-                
-                <form id="configForm" onsubmit="guardarConfiguracion(event)">
-                    <div class="form-group">
-                        <label>URL del Proyecto de Supabase</label>
-                        <input type="url" id="supabaseUrl" 
-                               placeholder="https://tuproyecto.supabase.co" 
-                               value="" required>
-                        <small style="color: #666; display: block; margin-top: 0.5rem;">
-                            Lo encuentras en: Settings → API → Project URL
-                        </small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Anon Key (Clave Publica)</label>
-                        <textarea id="supabaseKey" 
-                                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." 
-                                  rows="3" required></textarea>
-                        <small style="color: #666; display: block; margin-top: 0.5rem;">
-                            Lo encuentras en: Settings → API → Project API keys → anon public
-                        </small>
-                    </div>
-                    
-                    <div style="background: #f0f9ff; padding: 1.5rem; border-radius: 10px; margin-bottom: 1.5rem; border-left: 4px solid var(--secondary);">
-                        <strong style="color: var(--primary);">Instrucciones para configurar las tablas:</strong>
-                        <ol style="margin-top: 0.5rem; margin-left: 1.5rem; color: #666;">
-                            <li style="margin: 0.5rem 0;">Ve al SQL Editor en tu proyecto de Supabase</li>
-                            <li style="margin: 0.5rem 0;">Copia y ejecuta el siguiente codigo SQL:</li>
-                        </ol>
-                        <pre style="background: white; padding: 1rem; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; margin-top: 0.5rem;">-- Tabla de productos
-CREATE TABLE productos (
-  id BIGSERIAL PRIMARY KEY,
-  nombre TEXT NOT NULL,
-  marca TEXT NOT NULL,
-  categoria TEXT NOT NULL,
-  descripcion TEXT NOT NULL,
-  precio DECIMAL(10,2) NOT NULL,
-  icon TEXT DEFAULT '📦',
-  badge TEXT,
-  activo BOOLEAN DEFAULT true,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Tabla de pedidos
-CREATE TABLE pedidos (
-  id BIGSERIAL PRIMARY KEY,
-  numero_pedido TEXT UNIQUE NOT NULL,
-  nombre_cliente TEXT NOT NULL,
-  telefono_cliente TEXT NOT NULL,
-  direccion TEXT NOT NULL,
-  notas TEXT,
-  productos JSONB NOT NULL,
-  cantidad_items INTEGER NOT NULL,
-  total DECIMAL(10,2) NOT NULL,
-  estado TEXT DEFAULT 'pendiente_pago',
-  fecha_pedido TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Habilitar Row Level Security
-ALTER TABLE productos ENABLE ROW LEVEL SECURITY;
-ALTER TABLE pedidos ENABLE ROW LEVEL SECURITY;
-
--- Politicas para productos (todos pueden leer)
-CREATE POLICY "Todos pueden ver productos" ON productos
-  FOR SELECT USING (true);
-
-CREATE POLICY "Usuarios autenticados pueden gestionar productos" ON productos
-  FOR ALL USING (auth.role() = 'authenticated');
-
--- Politicas para pedidos
-CREATE POLICY "Todos pueden crear pedidos" ON pedidos
-  FOR INSERT WITH CHECK (true);
-
-CREATE POLICY "Usuarios autenticados pueden ver pedidos" ON pedidos
-  FOR SELECT USING (auth.role() = 'authenticated');</pre>
-                    </div>
-                    
-                    <button type="submit" class="btn-primary">Guardar Configuracion</button>
-                    
-                    <div id="configStatus" style="margin-top: 1rem; padding: 1rem; border-radius: 8px; display: none;"></div>
-                </form>
-                
-                <div style="margin-top: 2rem; padding: 1.5rem; background: #fff3cd; border-radius: 10px; border-left: 4px solid #ffc107;">
-                    <strong style="color: #856404;">Configuracion actual:</strong>
-                    <p id="configActual" style="margin-top: 0.5rem; color: #856404; font-family: monospace; font-size: 0.9rem;"></p>
-                </div>
-            </div>
-        </main>
-    </div>
-
     <div id="adminView" style="display:none;">
         <main class="container">
-            <div class="admin-section">
-                <div class="admin-header">
-                    <h2>Gestion de Productos</h2>
-                    <button class="btn-secondary" onclick="abrirModalProducto()">Agregar Producto</button>
+            <div id="loginSection" class="login-section">
+                <h2 style="margin-bottom: 1rem; color: var(--primary);">Acceso Administrador</h2>
+                <div class="auth-info">
+                    <p style="color: #666; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                        Para acceder al panel de administracion, primero debes crear un usuario en tu proyecto de Supabase:
+                    </p>
+                    <ol style="color: #666; font-size: 0.9rem; margin-left: 1.5rem;">
+                        <li>Ve a tu proyecto: <a href="https://zejzrujrspeoszpfbjce.supabase.co" target="_blank" style="color: var(--secondary);">Supabase Dashboard</a></li>
+                        <li>Menu: Authentication → Users</li>
+                        <li>Click "Add user" → "Create new user"</li>
+                        <li>Ingresa email y contraseña</li>
+                        <li>Confirma el email del usuario</li>
+                        <li>Vuelve aqui e inicia sesion</li>
+                    </ol>
                 </div>
-                <div style="overflow-x: auto;">
-                    <table class="products-table">
-                        <thead>
-                            <tr>
-                                <th>Icon</th>
-                                <th>Nombre</th>
-                                <th>Marca</th>
-                                <th>Categoria</th>
-                                <th>Precio</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="adminProductsTable"></tbody>
-                    </table>
+                <form id="loginForm" onsubmit="iniciarSesion(event)">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="emailLogin" required placeholder="admin@red51.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Contraseña</label>
+                        <input type="password" id="passwordLogin" required>
+                    </div>
+                    <button type="submit" class="btn-primary">Iniciar Sesion</button>
+                    <div id="loginError" style="margin-top: 1rem; padding: 1rem; border-radius: 8px; display: none; background: #f8d7da; color: #721c24;"></div>
+                </form>
+            </div>
+
+            <div id="adminPanel" style="display:none;">
+                <div class="admin-section">
+                    <div class="admin-header">
+                        <h2>Gestion de Productos</h2>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <span id="adminEmail" style="color: #666; font-size: 0.9rem;"></span>
+                            <button class="btn-secondary" onclick="abrirModalProducto()">Agregar Producto</button>
+                            <button class="btn-danger" onclick="cerrarSesion()">Cerrar Sesion</button>
+                        </div>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="products-table">
+                            <thead>
+                                <tr>
+                                    <th>Icon</th>
+                                    <th>Nombre</th>
+                                    <th>Marca</th>
+                                    <th>Categoria</th>
+                                    <th>Precio</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminProductsTable"></tbody>
+                        </table>
+                    </div>
+                    <div id="loadingAdmin" class="loading" style="display:none;">Cargando...</div>
                 </div>
-                <div id="loadingAdmin" class="loading" style="display:none;">Cargando...</div>
             </div>
         </main>
     </div>
@@ -902,6 +860,10 @@ CREATE POLICY "Usuarios autenticados pueden ver pedidos" ON pedidos
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // CONFIGURACION PRE-CARGADA DE SUPABASE
+        const SUPABASE_URL = 'https://zejzrujrspeoszpfbjce.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InplanpydWpyc3Blb3N6cGZiamNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2MDMyNDMsImV4cCI6MjA3NTE3OTI0M30.UAi4jQ0BH1hphW7OEh4JWP4hdVJ4CmvX6x4CyP2ak-U';
+        
         let carrito = [];
         let supabaseClient = null;
         let categoriaActual = 'todos';
@@ -909,11 +871,8 @@ CREATE POLICY "Usuarios autenticados pueden ver pedidos" ON pedidos
         let usuarioActual = null;
 
         function inicializarSupabase() {
-            const config = JSON.parse(localStorage.getItem('supabase_config') || '{}');
-            if (config.configured) {
-                supabaseClient = supabase.createClient(config.url, config.key);
-                verificarSesion();
-            }
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            verificarSesion();
         }
 
         async function verificarSesion() {
@@ -922,91 +881,71 @@ CREATE POLICY "Usuarios autenticados pueden ver pedidos" ON pedidos
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
                 usuarioActual = session.user;
-                document.getElementById('btnAdmin').style.display = 'block';
+                mostrarPanelAdmin();
             }
+        }
+
+        async function iniciarSesion(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('emailLogin').value;
+            const password = document.getElementById('passwordLogin').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            errorDiv.style.display = 'none';
+            
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) throw error;
+                
+                usuarioActual = data.user;
+                mostrarPanelAdmin();
+                
+            } catch (error) {
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = 'Error al iniciar sesion: ' + error.message;
+            }
+        }
+
+        function mostrarPanelAdmin() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'block';
+            document.getElementById('adminEmail').textContent = usuarioActual.email;
+            cargarProductosAdmin();
+        }
+
+        async function cerrarSesion() {
+            await supabaseClient.auth.signOut();
+            usuarioActual = null;
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('adminPanel').style.display = 'none';
+            mostrarTienda();
         }
 
         function mostrarTienda() {
             document.getElementById('tiendaView').style.display = 'block';
             document.getElementById('adminView').style.display = 'none';
-            document.getElementById('configView').style.display = 'none';
-        }
-
-        function mostrarConfig() {
-            document.getElementById('tiendaView').style.display = 'none';
-            document.getElementById('adminView').style.display = 'none';
-            document.getElementById('configView').style.display = 'block';
-            cargarConfigActual();
-        }
-
-        function cargarConfigActual() {
-            const config = JSON.parse(localStorage.getItem('supabase_config') || '{}');
-            const statusDiv = document.getElementById('configActual');
-            
-            if (config.configured) {
-                statusDiv.textContent = 'Conectado a: ' + config.url;
-                document.getElementById('supabaseUrl').value = config.url;
-                document.getElementById('supabaseKey').value = config.key;
-            } else {
-                statusDiv.textContent = 'No configurado - Ingresa tus credenciales de Supabase';
-            }
-        }
-
-        async function guardarConfiguracion(event) {
-            event.preventDefault();
-            
-            const url = document.getElementById('supabaseUrl').value.trim();
-            const key = document.getElementById('supabaseKey').value.trim();
-            const statusDiv = document.getElementById('configStatus');
-            
-            statusDiv.style.display = 'block';
-            statusDiv.style.background = '#cce5ff';
-            statusDiv.style.color = '#004085';
-            statusDiv.textContent = 'Verificando conexion...';
-            
-            try {
-                const testClient = supabase.createClient(url, key);
-                const { error } = await testClient.from('productos').select('count').limit(1);
-                
-                if (error) {
-                    throw new Error('No se pudo conectar. Verifica tus credenciales y que las tablas esten creadas. Error: ' + error.message);
-                }
-                
-                localStorage.setItem('supabase_config', JSON.stringify({
-                    url: url,
-                    key: key,
-                    configured: true
-                }));
-                
-                statusDiv.style.background = '#d4edda';
-                statusDiv.style.color = '#155724';
-                statusDiv.textContent = 'Configuracion guardada exitosamente! Recargando pagina...';
-                
-                setTimeout(() => {
-                    location.reload();
-                }, 1500);
-                
-            } catch (error) {
-                statusDiv.style.background = '#f8d7da';
-                statusDiv.style.color = '#721c24';
-                statusDiv.textContent = 'Error: ' + error.message;
-            }
         }
 
         function mostrarAdmin() {
-            if (!usuarioActual) {
-                alert('Debes iniciar sesion como administrador');
-                return;
-            }
             document.getElementById('tiendaView').style.display = 'none';
             document.getElementById('adminView').style.display = 'block';
-            document.getElementById('configView').style.display = 'none';
-            cargarProductosAdmin();
+            
+            if (usuarioActual) {
+                mostrarPanelAdmin();
+            } else {
+                document.getElementById('loginSection').style.display = 'block';
+                document.getElementById('adminPanel').style.display = 'none';
+            }
         }
 
         async function cargarProductos() {
             if (!supabaseClient) {
-                mostrarConfig();
+                console.error('Supabase no inicializado');
                 return;
             }
 
@@ -1027,13 +966,19 @@ CREATE POLICY "Usuarios autenticados pueden ver pedidos" ON pedidos
 
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error al cargar productos: ' + error.message);
+                document.getElementById('productsGrid').innerHTML = 
+                    '<div class="empty-cart"><p>Error al cargar productos. Verifica que las tablas esten creadas en Supabase.</p></div>';
             } finally {
                 document.getElementById('loadingProducts').style.display = 'none';
             }
         }
 
         function renderizarCategorias() {
+            if (productos.length === 0) {
+                document.getElementById('categoryFilter').innerHTML = '';
+                return;
+            }
+            
             const categorias = ['todos', ...new Set(productos.map(p => p.categoria))];
             const filterContainer = document.getElementById('categoryFilter');
             
@@ -1058,7 +1003,7 @@ CREATE POLICY "Usuarios autenticados pueden ver pedidos" ON pedidos
                 : productos.filter(p => p.categoria === categoriaActual);
             
             if (productosFiltrados.length === 0) {
-                grid.innerHTML = '<div class="empty-cart"><p>No hay productos disponibles</p></div>';
+                grid.innerHTML = '<div class="empty-cart"><p>No hay productos disponibles. Ve al panel de Admin para agregar productos.</p></div>';
                 return;
             }
 
@@ -1205,7 +1150,7 @@ CREATE POLICY "Usuarios autenticados pueden ver pedidos" ON pedidos
             event.preventDefault();
             
             if (!supabaseClient) {
-                alert('Sistema no configurado. Por favor, contacta al administrador.');
+                alert('Sistema no configurado.');
                 return;
             }
             
@@ -1248,7 +1193,7 @@ CREATE POLICY "Usuarios autenticados pueden ver pedidos" ON pedidos
                 
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error al realizar el pedido. Por favor, intenta nuevamente.');
+                alert('Error al realizar el pedido: ' + error.message);
             }
         }
 
@@ -1290,7 +1235,7 @@ CREATE POLICY "Usuarios autenticados pueden ver pedidos" ON pedidos
 
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error al cargar productos');
+                alert('Error al cargar productos: ' + error.message);
             } finally {
                 document.getElementById('loadingAdmin').style.display = 'none';
             }
@@ -1332,7 +1277,7 @@ CREATE POLICY "Usuarios autenticados pueden ver pedidos" ON pedidos
 
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error al cargar producto');
+                alert('Error al cargar producto: ' + error.message);
             }
         }
 
@@ -1396,7 +1341,7 @@ CREATE POLICY "Usuarios autenticados pueden ver pedidos" ON pedidos
 
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error al eliminar producto');
+                alert('Error al eliminar producto: ' + error.message);
             }
         }
 
@@ -1428,6 +1373,7 @@ CREATE POLICY "Usuarios autenticados pueden ver pedidos" ON pedidos
             }
         }
 
+        // Inicializar al cargar la pagina
         inicializarSupabase();
         cargarProductos();
     </script>
