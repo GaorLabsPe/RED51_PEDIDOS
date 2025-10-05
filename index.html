@@ -670,6 +670,7 @@
             </div>
             <div class="nav-links">
                 <button class="nav-btn" onclick="mostrarTienda()" id="btnTienda">Tienda</button>
+                <button class="nav-btn" onclick="mostrarConfig()">Configurar</button>
                 <button class="nav-btn" onclick="mostrarAdmin()" id="btnAdmin" style="display:none;">Admin</button>
                 <button class="cart-btn" onclick="abrirCarrito()">
                     Carrito
@@ -694,6 +695,103 @@
                 <div class="products-grid" id="productsGrid"></div>
                 <div id="loadingProducts" class="loading" style="display:none;">Cargando productos...</div>
             </section>
+        </main>
+    </div>
+
+    <div id="configView" style="display:none;">
+        <main class="container">
+            <div class="admin-section">
+                <h2 style="margin-bottom: 1rem; color: var(--primary);">Configuracion de Supabase</h2>
+                <p style="margin-bottom: 2rem; color: #666;">
+                    Para usar esta aplicacion, necesitas conectarla a tu proyecto de Supabase. 
+                    <a href="https://supabase.com" target="_blank" style="color: var(--secondary);">Crea una cuenta gratis aqui</a>.
+                </p>
+                
+                <form id="configForm" onsubmit="guardarConfiguracion(event)">
+                    <div class="form-group">
+                        <label>URL del Proyecto de Supabase</label>
+                        <input type="url" id="supabaseUrl" 
+                               placeholder="https://tuproyecto.supabase.co" 
+                               value="" required>
+                        <small style="color: #666; display: block; margin-top: 0.5rem;">
+                            Lo encuentras en: Settings → API → Project URL
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Anon Key (Clave Publica)</label>
+                        <textarea id="supabaseKey" 
+                                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." 
+                                  rows="3" required></textarea>
+                        <small style="color: #666; display: block; margin-top: 0.5rem;">
+                            Lo encuentras en: Settings → API → Project API keys → anon public
+                        </small>
+                    </div>
+                    
+                    <div style="background: #f0f9ff; padding: 1.5rem; border-radius: 10px; margin-bottom: 1.5rem; border-left: 4px solid var(--secondary);">
+                        <strong style="color: var(--primary);">Instrucciones para configurar las tablas:</strong>
+                        <ol style="margin-top: 0.5rem; margin-left: 1.5rem; color: #666;">
+                            <li style="margin: 0.5rem 0;">Ve al SQL Editor en tu proyecto de Supabase</li>
+                            <li style="margin: 0.5rem 0;">Copia y ejecuta el siguiente codigo SQL:</li>
+                        </ol>
+                        <pre style="background: white; padding: 1rem; border-radius: 8px; overflow-x: auto; font-size: 0.85rem; margin-top: 0.5rem;">-- Tabla de productos
+CREATE TABLE productos (
+  id BIGSERIAL PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  marca TEXT NOT NULL,
+  categoria TEXT NOT NULL,
+  descripcion TEXT NOT NULL,
+  precio DECIMAL(10,2) NOT NULL,
+  icon TEXT DEFAULT '📦',
+  badge TEXT,
+  activo BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Tabla de pedidos
+CREATE TABLE pedidos (
+  id BIGSERIAL PRIMARY KEY,
+  numero_pedido TEXT UNIQUE NOT NULL,
+  nombre_cliente TEXT NOT NULL,
+  telefono_cliente TEXT NOT NULL,
+  direccion TEXT NOT NULL,
+  notas TEXT,
+  productos JSONB NOT NULL,
+  cantidad_items INTEGER NOT NULL,
+  total DECIMAL(10,2) NOT NULL,
+  estado TEXT DEFAULT 'pendiente_pago',
+  fecha_pedido TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Habilitar Row Level Security
+ALTER TABLE productos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pedidos ENABLE ROW LEVEL SECURITY;
+
+-- Politicas para productos (todos pueden leer)
+CREATE POLICY "Todos pueden ver productos" ON productos
+  FOR SELECT USING (true);
+
+CREATE POLICY "Usuarios autenticados pueden gestionar productos" ON productos
+  FOR ALL USING (auth.role() = 'authenticated');
+
+-- Politicas para pedidos
+CREATE POLICY "Todos pueden crear pedidos" ON pedidos
+  FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Usuarios autenticados pueden ver pedidos" ON pedidos
+  FOR SELECT USING (auth.role() = 'authenticated');</pre>
+                    </div>
+                    
+                    <button type="submit" class="btn-primary">Guardar Configuracion</button>
+                    
+                    <div id="configStatus" style="margin-top: 1rem; padding: 1rem; border-radius: 8px; display: none;"></div>
+                </form>
+                
+                <div style="margin-top: 2rem; padding: 1.5rem; background: #fff3cd; border-radius: 10px; border-left: 4px solid #ffc107;">
+                    <strong style="color: #856404;">Configuracion actual:</strong>
+                    <p id="configActual" style="margin-top: 0.5rem; color: #856404; font-family: monospace; font-size: 0.9rem;"></p>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -753,15 +851,15 @@
                 <form id="productoForm" onsubmit="guardarProducto(event)">
                     <input type="hidden" id="productoId">
                     <div class="form-group">
-                        <label>Nombre del Producto *</label>
+                        <label>Nombre del Producto</label>
                         <input type="text" id="productoNombre" required>
                     </div>
                     <div class="form-group">
-                        <label>Marca *</label>
+                        <label>Marca</label>
                         <input type="text" id="productoMarca" required>
                     </div>
                     <div class="form-group">
-                        <label>Categoria *</label>
+                        <label>Categoria</label>
                         <select id="productoCategoria" required>
                             <option value="moviles">Smartphones & Tablets</option>
                             <option value="audio">Audio</option>
@@ -771,11 +869,11 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Descripcion *</label>
+                        <label>Descripcion</label>
                         <textarea id="productoDescripcion" required></textarea>
                     </div>
                     <div class="form-group">
-                        <label>Precio (S/) *</label>
+                        <label>Precio (S/)</label>
                         <input type="number" id="productoPrecio" step="0.01" min="0" required>
                     </div>
                     <div class="form-group">
@@ -831,6 +929,68 @@
         function mostrarTienda() {
             document.getElementById('tiendaView').style.display = 'block';
             document.getElementById('adminView').style.display = 'none';
+            document.getElementById('configView').style.display = 'none';
+        }
+
+        function mostrarConfig() {
+            document.getElementById('tiendaView').style.display = 'none';
+            document.getElementById('adminView').style.display = 'none';
+            document.getElementById('configView').style.display = 'block';
+            cargarConfigActual();
+        }
+
+        function cargarConfigActual() {
+            const config = JSON.parse(localStorage.getItem('supabase_config') || '{}');
+            const statusDiv = document.getElementById('configActual');
+            
+            if (config.configured) {
+                statusDiv.textContent = 'Conectado a: ' + config.url;
+                document.getElementById('supabaseUrl').value = config.url;
+                document.getElementById('supabaseKey').value = config.key;
+            } else {
+                statusDiv.textContent = 'No configurado - Ingresa tus credenciales de Supabase';
+            }
+        }
+
+        async function guardarConfiguracion(event) {
+            event.preventDefault();
+            
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('supabaseKey').value.trim();
+            const statusDiv = document.getElementById('configStatus');
+            
+            statusDiv.style.display = 'block';
+            statusDiv.style.background = '#cce5ff';
+            statusDiv.style.color = '#004085';
+            statusDiv.textContent = 'Verificando conexion...';
+            
+            try {
+                const testClient = supabase.createClient(url, key);
+                const { error } = await testClient.from('productos').select('count').limit(1);
+                
+                if (error) {
+                    throw new Error('No se pudo conectar. Verifica tus credenciales y que las tablas esten creadas. Error: ' + error.message);
+                }
+                
+                localStorage.setItem('supabase_config', JSON.stringify({
+                    url: url,
+                    key: key,
+                    configured: true
+                }));
+                
+                statusDiv.style.background = '#d4edda';
+                statusDiv.style.color = '#155724';
+                statusDiv.textContent = 'Configuracion guardada exitosamente! Recargando pagina...';
+                
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+                
+            } catch (error) {
+                statusDiv.style.background = '#f8d7da';
+                statusDiv.style.color = '#721c24';
+                statusDiv.textContent = 'Error: ' + error.message;
+            }
         }
 
         function mostrarAdmin() {
@@ -840,12 +1000,13 @@
             }
             document.getElementById('tiendaView').style.display = 'none';
             document.getElementById('adminView').style.display = 'block';
+            document.getElementById('configView').style.display = 'none';
             cargarProductosAdmin();
         }
 
         async function cargarProductos() {
             if (!supabaseClient) {
-                alert('Sistema no configurado. Contacta al administrador.');
+                mostrarConfig();
                 return;
             }
 
@@ -1005,15 +1166,15 @@
                 
                 <form class="checkout-form" onsubmit="realizarPedido(event)">
                     <div class="form-group">
-                        <label>Nombre Completo *</label>
+                        <label>Nombre Completo</label>
                         <input type="text" id="nombreCliente" required>
                     </div>
                     <div class="form-group">
-                        <label>Telefono *</label>
+                        <label>Telefono</label>
                         <input type="tel" id="telefonoCliente" required>
                     </div>
                     <div class="form-group">
-                        <label>Direccion de Entrega *</label>
+                        <label>Direccion de Entrega</label>
                         <textarea id="direccionCliente" required></textarea>
                     </div>
                     <div class="form-group">
@@ -1119,7 +1280,7 @@
                         <td>${producto.marca}</td>
                         <td>${getCategoriaName(producto.categoria)}</td>
                         <td>S/ ${parseFloat(producto.precio).toFixed(2)}</td>
-                        <td>${producto.activo ? '✓ Activo' : '✗ Inactivo'}</td>
+                        <td>${producto.activo ? 'Activo' : 'Inactivo'}</td>
                         <td class="table-actions">
                             <button class="btn-edit" onclick="editarProducto(${producto.id})">Editar</button>
                             <button class="btn-danger" onclick="eliminarProducto(${producto.id})">Eliminar</button>
@@ -1219,7 +1380,7 @@
         }
 
         async function eliminarProducto(id) {
-            if (!confirm('¿Estas seguro de eliminar este producto?')) return;
+            if (!confirm('Estas seguro de eliminar este producto?')) return;
 
             try {
                 const { error } = await supabaseClient
